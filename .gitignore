@@ -1,0 +1,58 @@
+# Bases de données
+*.db
+*.sqlite
+*.sqlite3
+local_inventory.db
+
+# Fichiers d'environnement (IMPORTANT pour sécurité)
+.env
+.env.local
+.env.*.local
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+env/
+ENV/
+*.egg-info/
+
+# Uploads utilisateurs
+static/uploads/*
+!static/uploads/.gitkeep
+
+# IDE et éditeurs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Logs
+*.log
+
+# Cache
+.cache/
+```
+
+---
+
+## Structure attendue de votre projet
+```
+votre-projet/
+├── .gitignore          ← ICI (à la racine)
+├── .env                ← Fichier local (pas commité)
+├── app.py
+├── pyproject.toml
+├── uv.lock
+├── templates/
+│   ├── login.html
+│   └── ...
+└── static/
+    └── uploads/
+        └── .gitkeep
