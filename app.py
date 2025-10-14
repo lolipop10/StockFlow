@@ -30,7 +30,7 @@ login_manager.init_app(app)
 login_manager.login_view = 'login'
 
 # ==================== DATABASE ====================
-#DATABASE_URL = os.environ.get('DATABASE_URL') or "sqlite:///local_inventory.db"
+DATABASE_URL = os.environ.get('DATABASE_URL')
 SQLITECLOUD_URL = os.environ.get('SQLITECLOUD_URL')
 def get_db_connection():
     """
