@@ -794,7 +794,7 @@ def update_weights():
     return redirect(url_for('search'))
 
 # ==================== MAIN ====================
-if __name__ == '__main__':
-    init_database()
-    # debug=False pour production; si vous voulez du debug local, activez manuellement
-    app.run(host='0.0.0.0', port=5000, debug=False)
+if __name__ == "__main__":
+    with app.app_context():
+        init_database()  # crée toutes les tables dans SQLiteCloud
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
