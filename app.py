@@ -30,8 +30,8 @@ login_manager.init_app(app)
 login_manager.login_view = 'login'
 
 # ==================== DATABASE ====================
-DATABASE_URL = os.environ.get('DATABASE_URL') or "sqlite:///local_inventory.db"
-
+#DATABASE_URL = os.environ.get('DATABASE_URL') or "sqlite:///local_inventory.db"
+SQLITECLOUD_URL = os.environ.get('SQLITECLOUD_URL')
 def get_db_connection():
     """
     Essaie sqlitecloud.connect si disponible et si DATABASE_URL n'est pas vide,
