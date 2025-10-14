@@ -793,8 +793,21 @@ def update_weights():
         flash('Erreur: ' + str(e), 'error')
     return redirect(url_for('search'))
 
-# ==================== MAIN ====================
 if __name__ == "__main__":
+    print(">>> Initialisation de la base de données :", DATABASE_URL)
+    from sqlitecloud import connect
+
+    # Vérifie la connexion à SQLiteCloud
+    if DATABASE_URL.startswith("sqlitecloud://"):
+        try:
+            conn = connect(DATABASE_URL)
+            print("Connexion SQLiteCloud réussie ✅")
+        except Exception as e:
+            print("Erreur de connexion SQLiteCloud ❌", e)
+
+    # Crée les tables
     with app.app_context():
-        init_database()  # crée toutes les tables dans SQLiteCloud
+        init_database()
+        print("Tables créées (ou déjà existantes) ✅")
+
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
