@@ -1,7 +1,11 @@
+
+
 from flask import Flask, render_template, request, redirect, url_for, flash, session, send_file, jsonify
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 import pandas as pd
 # note: sqlitecloud may be optional in some deployments; we try-import inside get_db_connection
+from dotenv import load_dotenv
+load_dotenv()  # Charge les variables depuis .env
 from datetime import datetime
 import os
 from io import BytesIO
