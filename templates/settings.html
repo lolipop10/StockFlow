@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+
+{% block title %}Paramètres - {{ company_name|default('Inventory Management') }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <h2 class="mb-4"><i class="fas fa-cog"></i> Paramètres de l'Application</h2>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Formulaire de Configuration -->
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5><i class="fas fa-building"></i> Personnalisation de l'Entreprise</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        <!-- Nom de l'entreprise -->
+                        <div class="mb-4">
+                            <label for="company_name" class="form-label">
+                                <i class="fas fa-signature"></i> Nom de l'Entreprise
+                            </label>
+                            <input type="text" class="form-control" id="company_name" name="company_name" 
+                                   value="{{ company_name }}" placeholder="Ex: Mon Entreprise SA" required>
+                            <div class="form-text">Ce nom apparaîtra dans la barre de navigation et le footer</div>
+                        </div>
+                
+                        
+                        <!-- Boutons d'action -->
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="fas fa-save"></i> Enregistrer les Paramètres
+                            </button>
+                            <a href="{{ url_for('dashboard') }}" class="btn btn-secondary btn-lg">
+                                <i class="fas fa-arrow-left"></i> Retour au Dashboard
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Aperçu de la Navigation -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5><i class="fas fa-eye"></i> Aperçu de la Navigation</h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted mb-3">Voici comment apparaîtra votre barre de navigation :</p>
+                    <nav class="navbar navbar-expand-lg navbar-dark bg-primary rounded">
+                        <div class="container-fluid">
+                            <a class="navbar-brand" href="#" onclick="return false;">
+                                {{ company_name }}
+                            </a>
+                        </div>
+                    </nav>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Panneau Latéral -->
+        <div class="col-md-4">
+            <!-- Informations Système -->
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h5><i class="fas fa-info-circle"></i> Informations Système</h5>
+                </div>
+                <div class="card-body">
+                    <p><strong>Version:</strong> 2.0</p>
+                    <p><strong>Administrateur:</strong> {{ current_user.username }}</p>
+                    <p><strong>Base de données:</strong> 
+                        {% if 'sqlitecloud' in DATABASE_URL %} SQLiteCloud {% else %} SQLite (Local) {% endif %}
+                    </p>
+                    <p class="mb-0"><strong>Statut:</strong> <span class="badge bg-success">Opérationnel</span></p>
+                </div>
+            </div>
+            
+            <!-- Conseils -->
+            <div class="card mt-4 border-success">
+                <div class="card-header bg-success text-white">
+                    <h5><i class="fas fa-lightbulb"></i> Conseils</h5>
+                </div>
+                <div class="card-body">
+                    <ul class="mb-0">
+                        <li>Nom de l’entreprise modifiable depuis ce panneau</li>
+                        <li>Les changements sont appliqués immédiatement</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <!-- Actions Rapides -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5><i class="fas fa-tools"></i> Actions Rapides</h5>
+                </div>
+                <div class="card-body">
+                    <a href="{{ url_for('users') }}" class="btn btn-outline-primary w-100 mb-2">
+                        <i class="fas fa-users"></i> Gérer les Utilisateurs
+                    </a>
+                    <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary w-100">
+                        <i class="fas fa-tachometer-alt"></i> Retour au Dashboard
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Informations Supplémentaires -->
+            <div class="card mt-4 border-warning">
+                <div class="card-header bg-warning">
+                    <h5><i class="fas fa-exclamation-triangle"></i> Important</h5>
+                </div>
+                <div class="card-body">
+                    <ul class="mb-0 small">
+                        <li>Les modifications affectent tous les utilisateurs</li>
+                        <li>Seuls les admins peuvent modifier le nom de l’entreprise</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Auto-focus sur le nom de l'entreprise
+document.getElementById('company_name').focus();
+
+// Animation sur le bouton d'enregistrement
+document.querySelector('form').addEventListener('submit', function(e) {
+    const submitBtn = this.querySelector('button[type="submit"]');
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Enregistrement...';
+    submitBtn.disabled = true;
+});
+</script>
+{% endblock %}

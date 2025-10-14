@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+
+{% block title %}Reset Inventory - Inventory Management{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card border-danger">
+            <div class="card-header bg-danger text-white">
+                <h4><i class="fas fa-trash-restore"></i> Réinitialisation de l'Inventaire</h4>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <strong>Attention!</strong> Cette action supprimera définitivement toutes les données d'inventaire.
+                    Cette opération est irréversible.
+                </div>
+                
+                <form method="POST">
+                    <div class="mb-3">
+                        <label for="pin" class="form-label">
+                            <i class="fas fa-lock"></i> Code PIN requis pour la réinitialisation
+                        </label>
+                        <input type="password" class="form-control" id="pin" name="pin" 
+                               placeholder="Entrez le code PIN" required>
+                        <div class="form-text">Entrez le code PIN pour confirmer la réinitialisation</div>
+                    </div>
+                    
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="confirm" required>
+                        <label class="form-check-label" for="confirm">
+                            Je comprends que cette action supprimera toutes les données d'inventaire
+                        </label>
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-danger btn-lg">
+                            <i class="fas fa-trash-restore"></i> Réinitialiser l'Inventaire
+                        </button>
+                        <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left"></i> Retour au Dashboard
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Warning Card -->
+        <div class="card mt-4 border-warning">
+            <div class="card-header bg-warning">
+                <h5><i class="fas fa-info-circle"></i> Informations Importantes</h5>
+            </div>
+            <div class="card-body">
+                <ul class="mb-0">
+                    <li>Cette opération supprimera toutes les données d'inventaire</li>
+                    <li>Les tables de base de données seront recréées</li>
+                    <li>Aucune sauvegarde automatique n'est effectuée</li>
+                    <li>Exportez vos données avant de procéder à la réinitialisation</li>
+                    <li>Cette action ne peut pas être annulée</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Focus PIN input
+document.getElementById('pin').focus();
+
+// Confirmation before submit
+document.querySelector('form').addEventListener('submit', function(e) {
+    if (!confirm('Êtes-vous absolument sûr de vouloir réinitialiser tout l\'inventaire? Cette action est irréversible!')) {
+        e.preventDefault();
+    }
+});
+</script>
+{% endblock %}

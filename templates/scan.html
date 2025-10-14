@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+
+{% block title %}Scan Barcode - Inventory Management{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <!-- Last Scan Info -->
+        {% if last_scan %}
+        <div class="card border-info mb-3">
+            <div class="card-header bg-info text-white">
+                <h6><i class="fas fa-clock"></i> Dernier Scan</h6>
+            </div>
+            <div class="card-body p-2">
+                <div class="row text-center">
+                    <div class="col-3">
+                        <small><strong>Lot:</strong></small><br>
+                        <span class="badge bg-primary">{{ last_scan.lot }}</span>
+                    </div>
+                    <div class="col-3">
+                        <small><strong>Article:</strong></small><br>
+                        {{ last_scan.code_article }}
+                    </div>
+                    <div class="col-3">
+                        <small><strong>Poids:</strong></small><br>
+                        {{ "%.1f"|format(last_scan.poids_physique) }} kg
+                    </div>
+                    <div class="col-3">
+                        <small><strong>Heure:</strong></small><br>
+                        {{ last_scan.date_scan[11:16] if last_scan.date_scan else '-' }}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h4><i class="fas fa-qrcode"></i> Scanner Code-Barres</h4>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <div class="mb-4">
+                        <label for="barcode" class="form-label">
+                            <i class="fas fa-barcode"></i> Code-barres (28 caractères)
+                        </label>
+                        <input type="text" class="form-control scanner-input" id="barcode" name="barcode" 
+                               placeholder="Scannez ou saisissez le code-barres" autofocus required>
+                        <div class="form-text">Format: 28 caractères - Code Article (pos 8-18), Lot (pos 18-28)</div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="poids" class="form-label">
+                                    <i class="fas fa-weight"></i> Poids Physique (kg)
+                                </label>
+                                <input type="number" class="form-control" id="poids" name="poids" 
+                                       step="0.01" min="0" value="0">
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">
+                                    <i class="fas fa-comment"></i> Remarques
+                                </label>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="remarque" 
+                                           value="Bobine NC" id="remarque1">
+                                    <label class="form-check-label" for="remarque1">Bobine NC</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="remarque" 
+                                           value="Bobine Abimé" id="remarque2">
+                                    <label class="form-check-label" for="remarque2">Bobine Abimé</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="remarque" 
+                                           value="Bobine Non Séparé" id="remarque3">
+                                    <label class="form-check-label" for="remarque3">Bobine Non Séparé</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-center">
+                        <button type="submit" class="btn btn-primary btn-lg btn-custom me-md-2">
+                            <i class="fas fa-plus"></i> Ajouter à l'Inventaire
+                        </button>
+                        <a href="{{ url_for('dashboard') }}" class="btn btn-secondary btn-lg btn-custom">
+                            <i class="fas fa-arrow-left"></i> Retour
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Instructions Card -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5><i class="fas fa-info-circle"></i> Instructions</h5>
+            </div>
+            <div class="card-body">
+                <ul class="mb-0">
+                    <li>Scannez le code-barres avec votre lecteur ou saisissez-le manuellement</li>
+                    <li>Le code-barres doit contenir exactement 28 caractères</li>
+                    <li>Le système extraira automatiquement le code article et le lot</li>
+                    <li>Ajoutez le poids physique et les remarques si nécessaire</li>
+                    <li>Cliquez sur "Ajouter à l'Inventaire" pour enregistrer</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Auto-focus barcode input and clear after submission
+document.getElementById('barcode').addEventListener('input', function(e) {
+    // Remove any non-alphanumeric characters if needed
+    let value = e.target.value;
+    if (value.length > 28) {
+        e.target.value = value.substring(0, 28);
+    }
+});
+
+// Auto-submit when barcode is exactly 28 characters (optional)
+document.getElementById('barcode').addEventListener('keyup', function(e) {
+    if (e.target.value.length === 28 && e.key === 'Enter') {
+        // Auto-focus to weight field
+        document.getElementById('poids').focus();
+    }
+});
+</script>
+{% endblock %}

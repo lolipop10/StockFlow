@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+
+{% block title %}Manual Entry - Inventory Management{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <h4><i class="fas fa-edit"></i> Saisie Manuelle</h4>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="lot" class="form-label">
+                                    <i class="fas fa-tag"></i> Numéro de Lot *
+                                </label>
+                                <input type="text" class="form-control" id="lot" name="lot" 
+                                       placeholder="Ex: 0012345678" required>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="code_article" class="form-label">
+                                    <i class="fas fa-barcode"></i> Code Article *
+                                </label>
+                                <input type="text" class="form-control" id="code_article" name="code_article" 
+                                       placeholder="Ex: 1234567890" required>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="poids" class="form-label">
+                                    <i class="fas fa-weight"></i> Poids Physique (kg)
+                                </label>
+                                <input type="number" class="form-control" id="poids" name="poids" 
+                                       step="0.01" min="0" value="0">
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">
+                                    <i class="fas fa-comment"></i> Remarques
+                                </label>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="remarque" 
+                                           value="Bobine NC" id="remarque1">
+                                    <label class="form-check-label" for="remarque1">Bobine NC</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="remarque" 
+                                           value="Bobine" id="remarque2">
+                                    <label class="form-check-label" for="remarque2">Bobine</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="remarque" 
+                                           value="Bobine Non Séparé" id="remarque3">
+                                    <label class="form-check-label" for="remarque3">Bobine Non Séparé</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-center">
+                        <button type="submit" class="btn btn-success btn-lg btn-custom me-md-2">
+                            <i class="fas fa-save"></i> Enregistrer Manuellement
+                        </button>
+                        <a href="{{ url_for('dashboard') }}" class="btn btn-secondary btn-lg btn-custom">
+                            <i class="fas fa-arrow-left"></i> Retour
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Instructions Card -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5><i class="fas fa-info-circle"></i> Instructions</h5>
+            </div>
+            <div class="card-body">
+                <ul class="mb-0">
+                    <li>Saisissez manuellement le numéro de lot et le code article</li>
+                    <li>Les champs marqués d'un astérisque (*) sont obligatoires</li>
+                    <li>Ajoutez le poids physique en kilogrammes</li>
+                    <li>Sélectionnez les remarques appropriées si nécessaire</li>
+                    <li>Cliquez sur "Enregistrer Manuellement" pour ajouter à l'inventaire</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Auto-focus first input
+document.getElementById('lot').focus();
+
+// Format lot number with leading zeros
+document.getElementById('lot').addEventListener('blur', function(e) {
+    let value = e.target.value.trim();
+    if (value && !isNaN(value)) {
+        e.target.value = value.padStart(10, '0');
+    }
+});
+</script>
+{% endblock %}

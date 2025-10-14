@@ -1,0 +1,305 @@
+{% extends "base.html" %}
+
+{% block title %}Créer un Utilisateur - {{ company_name|default('Inventory Management') }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4><i class="fas fa-user-plus"></i> Créer un Nouvel Utilisateur</h4>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="username" class="form-label">
+                                        <i class="fas fa-user"></i> Nom d'utilisateur *
+                                    </label>
+                                    <input type="text" class="form-control" id="username" name="username" 
+                                           placeholder="Ex: jdupont" required autofocus>
+                                    <div class="form-text">Utilisé pour la connexion (sans espaces)</div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="full_name" class="form-label">
+                                        <i class="fas fa-id-card"></i> Nom complet
+                                    </label>
+                                    <input type="text" class="form-control" id="full_name" name="full_name" 
+                                           placeholder="Ex: Jean Dupont">
+                                    <div class="form-text">Nom et prénom (optionnel)</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="password" class="form-label">
+                                        <i class="fas fa-lock"></i> Mot de passe *
+                                    </label>
+                                    <input type="password" class="form-control" id="password" name="password" 
+                                           minlength="6" required>
+                                    <div class="form-text">Minimum 6 caractères</div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="confirm_password" class="form-label">
+                                        <i class="fas fa-lock"></i> Confirmer le mot de passe *
+                                    </label>
+                                    <input type="password" class="form-control" id="confirm_password" 
+                                           name="confirm_password" minlength="6" required>
+                                    <div class="form-text">Saisir à nouveau le mot de passe</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label for="role" class="form-label">
+                                <i class="fas fa-user-tag"></i> Rôle *
+                            </label>
+                            <select class="form-select" id="role" name="role" required>
+                                <option value="user" selected>Utilisateur</option>
+                                <option value="admin">Administrateur</option>
+                            </select>
+                            <div class="form-text">
+                                <strong>Utilisateur:</strong> Accès au scan et à la recherche<br>
+                                <strong>Administrateur:</strong> Accès complet (gestion utilisateurs, export, réinitialisation)
+                            </div>
+                        </div>
+                        
+                        <hr>
+                        
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-center">
+                            <button type="submit" class="btn btn-primary btn-lg btn-custom me-md-2">
+                                <i class="fas fa-save"></i> Créer l'Utilisateur
+                            </button>
+                            <a href="{{ url_for('users') }}" class="btn btn-secondary btn-lg btn-custom">
+                                <i class="fas fa-arrow-left"></i> Annuler
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Instructions Card -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5><i class="fas fa-info-circle"></i> Instructions</h5>
+                </div>
+                <div class="card-body">
+                    <ul class="mb-0">
+                        <li>Le nom d'utilisateur doit être unique dans le système</li>
+                        <li>Évitez les espaces dans le nom d'utilisateur</li>
+                        <li>Le mot de passe doit contenir au moins 6 caractères</li>
+                        <li>Les administrateurs ont accès à toutes les fonctionnalités</li>
+                        <li>Les utilisateurs standards peuvent scanner et rechercher uniquement</li>
+                        <li>Vous pouvez modifier le rôle ou désactiver l'utilisateur plus tard</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <!-- Security Tips -->
+            <div class="card mt-4 border-warning">
+                <div class="card-header bg-warning">
+                    <h5><i class="fas fa-shield-alt"></i> Conseils de Sécurité</h5>
+                </div>
+                <div class="card-body">
+                    <ul class="mb-0">
+                        <li>Utilisez des mots de passe forts et uniques</li>
+                        <li>Ne créez des comptes administrateurs que si nécessaire</li>
+                        <li>Communiquez le mot de passe de manière sécurisée</li>
+                        <li>Demandez aux utilisateurs de changer leur mot de passe initial</li>
+                        <li>Désactivez les comptes inutilisés plutôt que de les supprimer</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Validation du nom d'utilisateur (pas d'espaces)
+document.getElementById('username').addEventListener('input', function(e) {
+    let value = e.target.value;
+    // Supprimer les espaces
+    if (value.includes(' ')) {
+        e.target.value = value.replace(/\s/g, '');
+        e.target.classList.add('is-invalid');
+        
+        // Ajouter un message d'erreur temporaire
+        let feedback = e.target.nextElementSibling;
+        let originalText = feedback.textContent;
+        feedback.textContent = 'Les espaces ne sont pas autorisés';
+        feedback.classList.add('text-danger');
+        
+        setTimeout(() => {
+            feedback.textContent = originalText;
+            feedback.classList.remove('text-danger');
+            e.target.classList.remove('is-invalid');
+        }, 2000);
+    }
+});
+
+// Validation de la confirmation du mot de passe
+document.getElementById('confirm_password').addEventListener('input', function(e) {
+    const password = document.getElementById('password').value;
+    const confirmPassword = e.target.value;
+    
+    if (confirmPassword && password !== confirmPassword) {
+        e.target.setCustomValidity('Les mots de passe ne correspondent pas');
+        e.target.classList.add('is-invalid');
+        e.target.classList.remove('is-valid');
+    } else {
+        e.target.setCustomValidity('');
+        e.target.classList.remove('is-invalid');
+        if (confirmPassword) {
+            e.target.classList.add('is-valid');
+        }
+    }
+});
+
+// Vérification en temps réel lors de la saisie du mot de passe
+document.getElementById('password').addEventListener('input', function() {
+    const confirmPassword = document.getElementById('confirm_password');
+    if (confirmPassword.value) {
+        confirmPassword.dispatchEvent(new Event('input'));
+    }
+});
+
+// Afficher/masquer le mot de passe (optionnel)
+document.querySelectorAll('input[type="password"]').forEach(input => {
+    const container = input.parentElement;
+    const toggleBtn = document.createElement('button');
+    toggleBtn.type = 'button';
+    toggleBtn.className = 'btn btn-outline-secondary btn-sm mt-1';
+    toggleBtn.innerHTML = '<i class="fas fa-eye"></i> Afficher';
+    toggleBtn.style.fontSize = '0.85rem';
+    
+    toggleBtn.addEventListener('click', function() {
+        if (input.type === 'password') {
+            input.type = 'text';
+            this.innerHTML = '<i class="fas fa-eye-slash"></i> Masquer';
+        } else {
+            input.type = 'password';
+            this.innerHTML = '<i class="fas fa-eye"></i> Afficher';
+        }
+    });
+    
+    container.appendChild(toggleBtn);
+});
+
+// Validation du formulaire avant soumission
+document.querySelector('form').addEventListener('submit', function(e) {
+    const password = document.getElementById('password').value;
+    const confirmPassword = document.getElementById('confirm_password').value;
+    const username = document.getElementById('username').value;
+    
+    // Vérifier les espaces dans le nom d'utilisateur
+    if (username.includes(' ')) {
+        e.preventDefault();
+        alert('❌ Le nom d\'utilisateur ne peut pas contenir d\'espaces');
+        document.getElementById('username').focus();
+        return false;
+    }
+    
+    // Vérifier que les mots de passe correspondent
+    if (password !== confirmPassword) {
+        e.preventDefault();
+        alert('❌ Les mots de passe ne correspondent pas');
+        document.getElementById('confirm_password').focus();
+        return false;
+    }
+    
+    // Vérifier la longueur du mot de passe
+    if (password.length < 6) {
+        e.preventDefault();
+        alert('❌ Le mot de passe doit contenir au moins 6 caractères');
+        document.getElementById('password').focus();
+        return false;
+    }
+    
+    // Confirmation pour créer un admin
+    const role = document.getElementById('role').value;
+    if (role === 'admin') {
+        if (!confirm('⚠️ Vous êtes sur le point de créer un compte administrateur.\n\nLes administrateurs ont accès à toutes les fonctionnalités du système.\n\nConfirmer ?')) {
+            e.preventDefault();
+            return false;
+        }
+    }
+    
+    // Animation du bouton
+    const submitBtn = this.querySelector('button[type="submit"]');
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Création en cours...';
+    submitBtn.disabled = true;
+});
+
+// Focus automatique sur le premier champ
+document.getElementById('username').focus();
+
+// Indicateur de force du mot de passe
+document.getElementById('password').addEventListener('input', function(e) {
+    const password = e.target.value;
+    const strength = calculatePasswordStrength(password);
+    
+    // Supprimer l'ancien indicateur s'il existe
+    let indicator = document.querySelector('.password-strength-indicator');
+    if (indicator) {
+        indicator.remove();
+    }
+    
+    if (password.length > 0) {
+        indicator = document.createElement('div');
+        indicator.className = 'password-strength-indicator mt-2';
+        
+        let strengthText = '';
+        let strengthClass = '';
+        
+        if (strength < 30) {
+            strengthText = 'Faible';
+            strengthClass = 'text-danger';
+        } else if (strength < 60) {
+            strengthText = 'Moyen';
+            strengthClass = 'text-warning';
+        } else {
+            strengthText = 'Fort';
+            strengthClass = 'text-success';
+        }
+        
+        indicator.innerHTML = `
+            <small class="${strengthClass}">
+                <i class="fas fa-shield-alt"></i> Force du mot de passe: <strong>${strengthText}</strong>
+            </small>
+            <div class="progress" style="height: 5px;">
+                <div class="progress-bar ${strengthClass.replace('text-', 'bg-')}" 
+                     role="progressbar" style="width: ${strength}%" 
+                     aria-valuenow="${strength}" aria-valuemin="0" aria-valuemax="100"></div>
+            </div>
+        `;
+        
+        e.target.parentElement.appendChild(indicator);
+    }
+});
+
+function calculatePasswordStrength(password) {
+    let strength = 0;
+    
+    if (password.length >= 6) strength += 20;
+    if (password.length >= 10) strength += 20;
+    if (/[a-z]/.test(password)) strength += 15;
+    if (/[A-Z]/.test(password)) strength += 15;
+    if (/[0-9]/.test(password)) strength += 15;
+    if (/[^a-zA-Z0-9]/.test(password)) strength += 15;
+    
+    return Math.min(strength, 100);
+}
+</script>
+{% endblock %}

@@ -1,0 +1,727 @@
+{% extends "base.html" %}
+
+{% block title %}Chat - {{ company_name|default('Inventory Management') }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-12">
+            <h2>
+                <i class="fas fa-comments"></i> Messagerie
+                <span id="page-unread-badge" class="badge bg-danger ms-2" style="display:none;">0</span>
+            </h2>
+        </div>
+    </div>
+
+    <div class="row mt-3">
+        <!-- Liste des contacts / Chat de groupe -->
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5><i class="fas fa-users"></i> Conversations</h5>
+                </div>
+                <div class="card-body p-0">
+                    <!-- Chat de groupe -->
+                    <div class="list-group list-group-flush">
+                        <a href="#" class="list-group-item list-group-item-action chat-contact" 
+                           data-type="group" data-user-id="">
+                            <div class="d-flex align-items-center">
+                                <div class="avatar bg-success text-white rounded-circle me-3" 
+                                     style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
+                                    <i class="fas fa-users"></i>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <h6 class="mb-0">💬 Groupe Équipe</h6>
+                                    <small class="text-muted">Tous les membres</small>
+                                </div>
+                                <span class="badge bg-danger rounded-pill group-unread-badge" style="display: none;">0</span>
+                            </div>
+                        </a>
+                    </div>
+                    
+                    <div class="p-2 bg-light border-top">
+                        <small class="text-muted fw-bold">Messages directs</small>
+                    </div>
+                    
+                    <!-- Liste des utilisateurs -->
+                    <div class="list-group list-group-flush">
+                        {% for user in users %}
+                        <a href="#" class="list-group-item list-group-item-action chat-contact" 
+                           data-type="direct" data-user-id="{{ user[0] }}" data-username="{{ user[1] }}">
+                            <div class="d-flex align-items-center">
+                                <div class="avatar bg-primary text-white rounded-circle me-3" 
+                                     style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
+                                    {{ user[1][0]|upper }}
+                                </div>
+                                <div class="flex-grow-1">
+                                    <h6 class="mb-0">{{ user[2] or user[1] }}</h6>
+                                    <small class="text-muted">@{{ user[1] }}</small>
+                                </div>
+                                <span class="badge bg-danger rounded-pill user-unread-badge-{{ user[0] }}" style="display: none;">0</span>
+                            </div>
+                        </a>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Zone de chat -->
+        <div class="col-md-9">
+            <div class="card" style="height: 70vh;">
+                <!-- En-tête du chat -->
+                <div class="card-header bg-info text-white d-flex align-items-center justify-content-between">
+                    <div id="chat-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-comment-dots"></i> 
+                            Sélectionnez une conversation
+                        </h5>
+                    </div>
+                    <div>
+                        <button class="btn btn-sm btn-light me-2" onclick="markAllAsRead()" title="Marquer tout comme lu">
+                            <i class="fas fa-check-double"></i>
+                        </button>
+                        <button class="btn btn-sm btn-light" onclick="refreshMessages()">
+                            <i class="fas fa-sync-alt"></i> Actualiser
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Zone des messages -->
+                <div class="card-body d-flex flex-column" style="overflow: hidden;">
+                    <div id="messages-container" class="flex-grow-1 overflow-auto mb-3" 
+                         style="max-height: calc(70vh - 180px);">
+                        <div class="text-center text-muted p-5">
+                            <i class="fas fa-comments fa-4x mb-3"></i>
+                            <p>Sélectionnez une conversation pour commencer</p>
+                            <small class="text-muted">
+                                <i class="fas fa-bell"></i> Les notifications sont activées
+                            </small>
+                        </div>
+                    </div>
+                    
+                    <!-- Zone de saisie -->
+                    <div id="message-input-area" style="display: none;">
+                        <div class="input-group">
+                            <input type="text" id="message-input" class="form-control" 
+                                   placeholder="Écrivez votre message..." 
+                                   onkeypress="handleKeyPress(event)">
+                            <button class="btn btn-primary" onclick="sendMessage()">
+                                <i class="fas fa-paper-plane"></i> Envoyer
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Info bulle -->
+            <div class="card mt-3 border-info">
+                <div class="card-body p-2">
+                    <small class="text-muted">
+                        <i class="fas fa-info-circle"></i> 
+                        Les messages sont actualisés automatiquement toutes les 5 secondes.
+                        <span id="notification-status"></span>
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let currentChatType = null;
+let currentUserId = null;
+let currentUsername = null;
+let refreshInterval = null;
+let unreadCheckInterval = null;
+let lastMessageCount = {};
+let notificationSound = null;
+let lastKnownMessageIds = new Set();
+
+// Créer un son de notification
+function initNotificationSound() {
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    if (AudioContext) {
+        const audioContext = new AudioContext();
+        notificationSound = {
+            play: function() {
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                oscillator.frequency.value = 800;
+                oscillator.type = 'sine';
+                
+                gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+                
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.5);
+            }
+        };
+    }
+}
+
+// Initialiser au chargement
+document.addEventListener('DOMContentLoaded', function() {
+    initNotificationSound();
+    checkUnreadMessages();
+    unreadCheckInterval = setInterval(checkUnreadMessages, 3000);
+    
+    // Demander la permission pour les notifications
+    if ("Notification" in window && Notification.permission === "default") {
+        Notification.requestPermission().then(function(permission) {
+            updateNotificationStatus(permission);
+        });
+    } else {
+        updateNotificationStatus(Notification.permission);
+    }
+    
+    const input = document.getElementById('message-input');
+    if (input) {
+        input.addEventListener('focus', function() {
+            if (refreshInterval) clearInterval(refreshInterval);
+        });
+        input.addEventListener('blur', function() {
+            if (currentChatType) {
+                refreshInterval = setInterval(loadMessages, 5000);
+            }
+        });
+    }
+});
+
+// Mettre à jour le statut des notifications
+function updateNotificationStatus(permission) {
+    const status = document.getElementById('notification-status');
+    if (status) {
+        if (permission === "granted") {
+            status.innerHTML = '<i class="fas fa-bell text-success"></i> Notifications activées';
+        } else if (permission === "denied") {
+            status.innerHTML = '<i class="fas fa-bell-slash text-danger"></i> Notifications désactivées';
+        } else {
+            status.innerHTML = '<i class="fas fa-bell text-warning"></i> Cliquez pour activer les notifications';
+            status.style.cursor = 'pointer';
+            status.onclick = function() {
+                Notification.requestPermission().then(updateNotificationStatus);
+            };
+        }
+    }
+}
+
+// Sélectionner une conversation
+document.querySelectorAll('.chat-contact').forEach(contact => {
+    contact.addEventListener('click', function(e) {
+        e.preventDefault();
+        
+        // Retirer la classe active de tous les contacts
+        document.querySelectorAll('.chat-contact').forEach(c => {
+            c.classList.remove('active');
+            c.classList.remove('has-unread');
+        });
+        this.classList.add('active');
+        
+        currentChatType = this.dataset.type;
+        currentUserId = this.dataset.userId || null;
+        currentUsername = this.dataset.username || null;
+        
+        // Mettre à jour l'en-tête
+        const header = document.getElementById('chat-header');
+        if (currentChatType === 'group') {
+            header.innerHTML = '<h5 class="mb-0"><i class="fas fa-users"></i> Groupe Équipe</h5>';
+        } else {
+            const fullName = this.querySelector('h6').textContent;
+            header.innerHTML = `<h5 class="mb-0"><i class="fas fa-user"></i> ${fullName}</h5>`;
+        }
+        
+        // Afficher la zone de saisie
+        document.getElementById('message-input-area').style.display = 'block';
+        
+        // Charger les messages
+        loadMessages();
+        
+        // Masquer le badge pour cette conversation
+        if (currentChatType === 'group') {
+            document.querySelector('.group-unread-badge').style.display = 'none';
+        } else {
+            const badge = document.querySelector(`.user-unread-badge-${currentUserId}`);
+            if (badge) badge.style.display = 'none';
+        }
+        
+        // Marquer les messages comme lus
+        markConversationAsRead();
+        
+        // Démarrer l'actualisation automatique
+        if (refreshInterval) clearInterval(refreshInterval);
+        refreshInterval = setInterval(loadMessages, 5000);
+    });
+});
+
+// Charger les messages
+function loadMessages() {
+    if (!currentChatType) return;
+    
+    let url = `/chat/messages?type=${currentChatType}`;
+    if (currentChatType === 'direct' && currentUserId) {
+        url += `&user_id=${currentUserId}`;
+    }
+    
+    fetch(url)
+        .then(response => response.json())
+        .then(data => {
+            displayMessages(data.messages);
+            // Vérifier les nouveaux messages
+            checkForNewMessages(data.messages);
+        })
+        .catch(error => {
+            console.error('Erreur:', error);
+        });
+}
+
+// Vérifier les nouveaux messages
+function checkForNewMessages(messages) {
+    const currentIds = new Set(messages.map(m => m.id));
+    const newMessages = messages.filter(m => !lastKnownMessageIds.has(m.id) && !m.is_own);
+    
+    if (newMessages.length > 0 && lastKnownMessageIds.size > 0) {
+        // Nouveau message reçu, jouer le son
+        playNotificationSound();
+        
+        // Animation de notification
+        const container = document.getElementById('messages-container');
+        container.classList.add('new-message-flash');
+        setTimeout(() => container.classList.remove('new-message-flash'), 1000);
+    }
+    
+    lastKnownMessageIds = currentIds;
+}
+
+// Afficher les messages
+function displayMessages(messages) {
+    const container = document.getElementById('messages-container');
+    
+    if (messages.length === 0) {
+        container.innerHTML = `
+            <div class="text-center text-muted p-5">
+                <i class="fas fa-inbox fa-3x mb-3"></i>
+                <p>Aucun message. Commencez la conversation!</p>
+            </div>
+        `;
+        return;
+    }
+    
+    let html = '';
+    messages.forEach(msg => {
+        const time = new Date(msg.created_at).toLocaleString('fr-FR', {
+            hour: '2-digit',
+            minute: '2-digit',
+            day: '2-digit',
+            month: '2-digit'
+        });
+        
+        const readStatus = msg.is_own ? (msg.is_read ? 
+            '<i class="fas fa-check-double text-primary" title="Lu"></i>' : 
+            '<i class="fas fa-check text-muted" title="Envoyé"></i>') : '';
+        
+        if (msg.is_own) {
+            html += `
+                <div class="d-flex justify-content-end mb-3">
+                    <div class="message-bubble bg-primary text-white p-3 rounded-3" 
+                         style="max-width: 70%;">
+                        <div class="mb-1">${escapeHtml(msg.message)}</div>
+                        <small class="opacity-75">
+                            ${time} ${readStatus}
+                        </small>
+                    </div>
+                </div>
+            `;
+        } else {
+            const unreadBadge = !msg.is_read ? '<span class="badge bg-danger ms-2">Nouveau</span>' : '';
+            html += `
+                <div class="d-flex justify-content-start mb-3">
+                    <div class="message-bubble ${!msg.is_read ? 'unread-message' : ''} bg-light p-3 rounded-3" style="max-width: 70%;">
+                        ${currentChatType === 'group' ? `<strong class="text-primary">${escapeHtml(msg.sender_fullname)}:</strong>${unreadBadge}<br>` : (unreadBadge ? unreadBadge + '<br>' : '')}
+                        <div class="mb-1">${escapeHtml(msg.message)}</div>
+                        <small class="text-muted">${time}</small>
+                    </div>
+                </div>
+            `;
+        }
+    });
+    
+    container.innerHTML = html;
+    container.scrollTop = container.scrollHeight;
+}
+
+// Envoyer un message
+function sendMessage() {
+    const input = document.getElementById('message-input');
+    const message = input.value.trim();
+    
+    if (!message) return;
+    
+    const data = {
+        message: message,
+        type: currentChatType
+    };
+    
+    if (currentChatType === 'direct') {
+        data.receiver_id = currentUserId;
+    }
+    
+    fetch('/chat/send', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            input.value = '';
+            loadMessages();
+            
+            // Animation d'envoi
+            const btn = document.querySelector('#message-input-area button');
+            btn.innerHTML = '<i class="fas fa-check"></i> Envoyé';
+            setTimeout(() => {
+                btn.innerHTML = '<i class="fas fa-paper-plane"></i> Envoyer';
+            }, 1000);
+        } else {
+            alert('Erreur: ' + (data.error || 'Erreur inconnue'));
+        }
+    })
+    .catch(error => {
+        console.error('Erreur:', error);
+        alert('Erreur lors de l\'envoi du message');
+    });
+}
+
+// Gérer la touche Entrée
+function handleKeyPress(event) {
+    if (event.key === 'Enter') {
+        sendMessage();
+    }
+}
+
+// Actualiser manuellement
+function refreshMessages() {
+    loadMessages();
+    checkUnreadMessages();
+    
+    const btn = event.target.closest('button');
+    const icon = btn.querySelector('i');
+    icon.classList.add('fa-spin');
+    setTimeout(() => icon.classList.remove('fa-spin'), 1000);
+}
+
+// Marquer la conversation comme lue
+function markConversationAsRead() {
+    if (!currentChatType) return;
+    
+    fetch('/chat/mark_all_read', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            type: currentChatType,
+            user_id: currentUserId
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            checkUnreadMessages();
+        }
+    })
+    .catch(error => console.error('Erreur:', error));
+}
+
+// Marquer tout comme lu
+function markAllAsRead() {
+    if (!currentChatType) {
+        alert('Veuillez sélectionner une conversation');
+        return;
+    }
+    
+    markConversationAsRead();
+}
+
+// Vérifier les messages non lus
+function checkUnreadMessages() {
+    fetch('/chat/unread_count')
+        .then(response => response.json())
+        .then(data => {
+            updateGlobalUnreadBadge(data.count);
+            updatePageUnreadBadge(data.count);
+            
+            // Mettre à jour les badges individuels
+            if (data.by_user) {
+                Object.keys(data.by_user).forEach(userId => {
+                    const userInfo = data.by_user[userId];
+                    updateUnreadBadge('direct', userId, userInfo.count);
+                    
+                    // Ajouter l'effet de brillance
+                    const contact = document.querySelector(`.chat-contact[data-user-id="${userId}"]`);
+                    if (contact && userInfo.count > 0) {
+                        contact.classList.add('has-unread');
+                    }
+                });
+            }
+            
+            // Badge du groupe
+            if (data.group > 0) {
+                updateUnreadBadge('group', null, data.group);
+                const groupContact = document.querySelector('.chat-contact[data-type="group"]');
+                if (groupContact) {
+                    groupContact.classList.add('has-unread');
+                }
+            }
+        })
+        .catch(error => console.error('Erreur:', error));
+}
+
+// Mettre à jour le badge global dans la navigation
+function updateGlobalUnreadBadge(count) {
+    const badge = document.getElementById('global-unread-badge');
+    if (badge) {
+        if (count > 0) {
+            badge.textContent = count > 99 ? '99+' : count;
+            badge.style.display = 'inline';
+            badge.classList.add('badge-pulse');
+            setTimeout(() => badge.classList.remove('badge-pulse'), 1000);
+        } else {
+            badge.style.display = 'none';
+        }
+    }
+}
+
+// Mettre à jour le badge de la page
+function updatePageUnreadBadge(count) {
+    const badge = document.getElementById('page-unread-badge');
+    if (badge) {
+        if (count > 0) {
+            badge.textContent = count > 99 ? '99+' : count;
+            badge.style.display = 'inline';
+        } else {
+            badge.style.display = 'none';
+        }
+    }
+}
+
+// Mettre à jour le badge d'une conversation
+function updateUnreadBadge(type, userId, count) {
+    let badge;
+    if (type === 'group') {
+        badge = document.querySelector('.group-unread-badge');
+    } else {
+        badge = document.querySelector(`.user-unread-badge-${userId}`);
+    }
+    
+    if (badge) {
+        if (count > 0) {
+            badge.textContent = count > 99 ? '99+' : count;
+            badge.style.display = 'inline';
+            badge.classList.add('badge-pulse');
+            setTimeout(() => badge.classList.remove('badge-pulse'), 1000);
+        } else {
+            badge.style.display = 'none';
+        }
+    }
+}
+
+// Afficher une notification navigateur
+function showNotification(title, body) {
+    if (!("Notification" in window)) return;
+    
+    if (Notification.permission === "granted") {
+        createNotification(title, body);
+    } else if (Notification.permission !== "denied") {
+        Notification.requestPermission().then(function(permission) {
+            if (permission === "granted") {
+                createNotification(title, body);
+            }
+            updateNotificationStatus(permission);
+        });
+    }
+}
+
+// Créer la notification
+function createNotification(title, body) {
+    const notification = new Notification(title, {
+        body: body.substring(0, 100) + (body.length > 100 ? '...' : ''),
+        icon: '/static/uploads/logo.png',
+        badge: '/static/uploads/logo.png',
+        tag: 'chat-message',
+        requireInteraction: false
+    });
+    
+    notification.onclick = function() {
+        window.focus();
+        notification.close();
+    };
+    
+    setTimeout(() => notification.close(), 5000);
+}
+
+// Jouer le son de notification
+function playNotificationSound() {
+    if (notificationSound) {
+        try {
+            notificationSound.play();
+        } catch (e) {
+            console.log('Son de notification désactivé');
+        }
+    }
+}
+
+// Échapper le HTML
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+// Nettoyer les intervalles
+window.addEventListener('beforeunload', function() {
+    if (refreshInterval) clearInterval(refreshInterval);
+    if (unreadCheckInterval) clearInterval(unreadCheckInterval);
+});
+</script>
+
+<style>
+.chat-contact {
+    transition: all 0.2s;
+}
+
+.chat-contact:hover {
+    background-color: #f8f9fa;
+}
+
+.chat-contact.active {
+    background-color: #e3f2fd;
+    border-left: 4px solid #007bff;
+}
+
+.message-bubble {
+    word-wrap: break-word;
+    animation: fadeIn 0.3s;
+}
+
+.unread-message {
+    border-left: 3px solid #dc3545;
+    background-color: #fff3cd !important;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+#messages-container::-webkit-scrollbar {
+    width: 8px;
+}
+
+#messages-container::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 10px;
+}
+
+#messages-container::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 10px;
+}
+
+#messages-container::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+.avatar {
+    font-weight: bold;
+    font-size: 16px;
+}
+
+/* Animation pour les badges */
+@keyframes badgePulse {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.2);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+.badge-pulse {
+    animation: badgePulse 0.5s ease-in-out;
+}
+
+/* Badge de messages non lus */
+.user-unread-badge,
+.group-unread-badge {
+    font-size: 0.7rem;
+    min-width: 20px;
+    height: 20px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 6px;
+}
+
+/* Effet de brillance pour les nouveaux messages */
+@keyframes glow {
+    0% {
+        box-shadow: 0 0 5px rgba(220, 53, 69, 0.5);
+    }
+    50% {
+        box-shadow: 0 0 20px rgba(220, 53, 69, 0.8);
+    }
+    100% {
+        box-shadow: 0 0 5px rgba(220, 53, 69, 0.5);
+    }
+}
+
+.chat-contact.has-unread {
+    animation: glow 2s infinite;
+    background-color: #fff3cd !important;
+}
+
+/* Flash pour nouveau message */
+@keyframes flashBackground {
+    0% {
+        background-color: #fff;
+    }
+    50% {
+        background-color: #d1ecf1;
+    }
+    100% {
+        background-color: #fff;
+    }
+}
+
+.new-message-flash {
+    animation: flashBackground 0.5s ease-in-out;
+}
+
+/* Badge dans la navigation */
+#global-unread-badge,
+#page-unread-badge {
+    font-size: 0.7rem;
+    vertical-align: top;
+    margin-left: 5px;
+}
+</style>
+{% endblock %}

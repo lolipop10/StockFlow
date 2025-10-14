@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+
+{% block title %}Mon Profil{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4><i class="fas fa-user-circle"></i> Mon Profil</h4>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <h5>Informations du Compte</h5>
+                            <p><strong>Nom d'utilisateur:</strong> {{ current_user.username }}</p>
+                            <p><strong>Rôle:</strong> 
+                                {% if current_user.role == 'admin' %}
+                                    <span class="badge bg-danger">Administrateur</span>
+                                {% else %}
+                                    <span class="badge bg-info">Utilisateur</span>
+                                {% endif %}
+                            </p>
+                            <p class="mb-0"><strong>Statut:</strong> <span class="badge bg-success">Actif</span></p>
+                        </div>
+                        
+                        <div class="col-md-6 text-center">
+                            <i class="fas fa-user-circle fa-5x text-primary mb-3"></i>
+                            <p class="text-muted">{{ current_user.username }}</p>
+                        </div>
+                    </div>
+                    
+                    <hr>
+                    
+                    <h5 class="mb-3"><i class="fas fa-lock"></i> Changer le Mot de Passe</h5>
+                    <form method="POST">
+                        <div class="mb-3">
+                            <label for="current_password" class="form-label">
+                                <i class="fas fa-key"></i> Mot de passe actuel *
+                            </label>
+                            <input type="password" class="form-control" id="current_password" 
+                                   name="current_password" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="new_password" class="form-label">
+                                <i class="fas fa-lock"></i> Nouveau mot de passe *
+                            </label>
+                            <input type="password" class="form-control" id="new_password" 
+                                   name="new_password" minlength="6" required>
+                            <div class="form-text">Minimum 6 caractères</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="confirm_password" class="form-label">
+                                <i class="fas fa-lock"></i> Confirmer le nouveau mot de passe *
+                            </label>
+                            <input type="password" class="form-control" id="confirm_password" 
+                                   name="confirm_password" minlength="6" required>
+                        </div>
+                        
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-center">
+                            <button type="submit" class="btn btn-primary btn-lg btn-custom me-md-2">
+                                <i class="fas fa-save"></i> Modifier le Mot de Passe
+                            </button>
+                            <a href="{{ url_for('dashboard') }}" class="btn btn-secondary btn-lg btn-custom">
+                                <i class="fas fa-arrow-left"></i> Retour
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Security Tips Card -->
+            <div class="card mt-4 border-warning">
+                <div class="card-header bg-warning">
+                    <h5><i class="fas fa-shield-alt"></i> Conseils de Sécurité</h5>
+                </div>
+                <div class="card-body">
+                    <ul class="mb-0">
+                        <li>Utilisez un mot de passe unique et complexe</li>
+                        <li>Changez votre mot de passe régulièrement</li>
+                        <li>Ne partagez jamais votre mot de passe</li>
+                        <li>Incluez des lettres, chiffres et caractères spéciaux</li>
+                        <li>Déconnectez-vous après utilisation sur un poste partagé</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Password confirmation validation
+document.getElementById('confirm_password').addEventListener('input', function(e) {
+    const newPassword = document.getElementById('new_password').value;
+    const confirmPassword = e.target.value;
+    
+    if (confirmPassword && newPassword !== confirmPassword) {
+        e.target.setCustomValidity('Les mots de passe ne correspondent pas');
+        e.target.classList.add('is-invalid');
+    } else {
+        e.target.setCustomValidity('');
+        e.target.classList.remove('is-invalid');
+        if (confirmPassword) e.target.classList.add('is-valid');
+    }
+});
+
+// Real-time password match checking
+document.getElementById('new_password').addEventListener('input', function() {
+    const confirmPassword = document.getElementById('confirm_password');
+    if (confirmPassword.value) {
+        confirmPassword.dispatchEvent(new Event('input'));
+    }
+});
+</script>
+{% endblock %}
